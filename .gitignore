@@ -1,0 +1,18 @@
+# Dependencias
+node_modules/
+vendor/
+
+# Binarios y compilados
+bin/
+*.exe
+gateway
+
+# Archivos temporales y de sistema
+*.log
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp

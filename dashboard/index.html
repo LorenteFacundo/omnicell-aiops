@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniCell — AIOps Dashboard</title>
+  <meta name="description" content="OmniCell AIOps & MCP Engine — Panel de observabilidad en tiempo real para infraestructura celular distribuida." />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="index.css" />
+
+  <!-- Chart.js vía CDN para los gráficos de latencia en tiempo real -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ======== Header ======== -->
+  <header>
+    <div class="header-brand">
+      <div class="header-logo">OC</div>
+      <div>
+        <div class="header-title">OmniCell AIOps &amp; MCP Engine</div>
+        <div class="header-subtitle">Cell-Based Infrastructure · Gateway v1.0</div>
+      </div>
+    </div>
+
+    <div class="header-status">
+      <!-- Guardián AIOps -->
+      <div class="ai-guardian-toggle">
+        <span class="guardian-icon">🛡️</span>
+        <span class="guardian-label">Guardián Auto-Healing</span>
+        <label class="switch">
+          <input type="checkbox" id="auto-healing-toggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      
+      <button id="btn-config-ai" class="btn btn-primary" style="padding: 4px 12px; margin-right: 15px;">
+        <span class="icon">⚙️</span> IA
+      </button>
+
+      <!-- Badge de estado general del sistema -->
+      <div class="status-badge operational" id="system-status-badge">
+        <span class="status-dot pulse" id="system-status-dot"></span>
+        <span id="system-status-text">OPERACIONAL</span>
+      </div>
+
+      <!-- Indicador de polling -->
+      <div class="refresh-indicator">
+        <div class="refresh-spinner"></div>
+        <span id="refresh-counter">actualizando...</span>
+      </div>
+
+      <!-- Reloj -->
+      <div class="header-time" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ======== Contenido principal ======== -->
+  <main>
+
+    <!-- ---- Fila KPIs ---- -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Requests / seg</div>
+        <div class="kpi-value cyan" id="kpi-rps">—</div>
+        <div class="kpi-unit">req/s</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Requests</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-unit">acumulado</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Tasa de Error</div>
+        <div class="kpi-value" id="kpi-error-rate">—</div>
+        <div class="kpi-unit">% de requests</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Cache Hit Rate</div>
+        <div class="kpi-value green" id="kpi-cache-hit">—</div>
+        <div class="kpi-unit">% off-heap</div>
+      </div>
+    </div>
+
+    <!-- ---- Fila células ---- -->
+    <div class="cells-row" id="cells-container">
+      <!-- Las cards de células se generan dinámicamente por app.js -->
+      <!-- Skeleton inicial para evitar layout shift -->
+      <div class="cell-card healthy" id="cell-A">
+        <div class="cell-header">
+          <div class="cell-title">
+            <div class="cell-icon">A</div>
+            <div>
+              <div class="cell-name">Célula A</div>
+              <div class="cell-range" id="cell-A-range">IDs 0 — 999.999</div>
+            </div>
+          </div>
+          <span class="cell-status-badge" id="cell-A-badge">healthy</span>
+        </div>
+        <div class="cell-metrics">
+          <div class="cell-metric">
+            <div class="cell-metric-label">Latencia p99</div>
+            <div class="cell-metric-value" id="cell-A-p99">—</div>
+            <div class="cell-metric-unit">ms</div>
+          </div>
+          <div class="cell-metric">
+            <div class="cell-metric-label">Peticiones</div>
+            <div class="cell-metric-value" id="cell-A-reqs">—</div>
+            <div class="cell-metric-unit">total</div>
+          </div>
+        </div>
+        <div class="cell-load-bar">
+          <div class="cell-load-label">
+            <span>Carga</span>
+            <span id="cell-A-fail">0 fallidas</span>
+          </div>
+          <div class="cell-load-track">
+            <div class="cell-load-fill" id="cell-A-load" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="cell-actions">
+          <button class="btn btn-warning" onclick="degradeCell('A')">⚡ Degradar</button>
+          <button class="btn btn-danger"  onclick="collapseCell('A')">💥 Colapsar</button>
+          <button class="btn btn-success" onclick="recoverCell('A')">✅ Recuperar</button>
+        </div>
+      </div>
+
+      <div class="cell-card healthy" id="cell-B">
+        <div class="cell-header">
+          <div class="cell-title">
+            <div class="cell-icon">B</div>
+            <div>
+              <div class="cell-name">Célula B</div>
+              <div class="cell-range" id="cell-B-range">IDs 1M — 1.999.999</div>
+            </div>
+          </div>
+          <span class="cell-status-badge" id="cell-B-badge">healthy</span>
+        </div>
+        <div class="cell-metrics">
+          <div class="cell-metric">
+            <div class="cell-metric-label">Latencia p99</div>
+            <div class="cell-metric-value" id="cell-B-p99">—</div>
+            <div class="cell-metric-unit">ms</div>
+          </div>
+          <div class="cell-metric">
+            <div class="cell-metric-label">Peticiones</div>
+            <div class="cell-metric-value" id="cell-B-reqs">—</div>
+            <div class="cell-metric-unit">total</div>
+          </div>
+        </div>
+        <div class="cell-load-bar">
+          <div class="cell-load-label">
+            <span>Carga</span>
+            <span id="cell-B-fail">0 fallidas</span>
+          </div>
+          <div class="cell-load-track">
+            <div class="cell-load-fill" id="cell-B-load" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="cell-actions">
+          <button class="btn btn-warning" onclick="degradeCell('B')">⚡ Degradar</button>
+          <button class="btn btn-danger"  onclick="collapseCell('B')">💥 Colapsar</button>
+          <button class="btn btn-success" onclick="recoverCell('B')">✅ Recuperar</button>
+        </div>
+      </div>
+
+      <div class="cell-card healthy" id="cell-C">
+        <div class="cell-header">
+          <div class="cell-title">
+            <div class="cell-icon">C</div>
+            <div>
+              <div class="cell-name">Célula C</div>
+              <div class="cell-range" id="cell-C-range">IDs 2M — 2.999.999</div>
+            </div>
+          </div>
+          <span class="cell-status-badge" id="cell-C-badge">healthy</span>
+        </div>
+        <div class="cell-metrics">
+          <div class="cell-metric">
+            <div class="cell-metric-label">Latencia p99</div>
+            <div class="cell-metric-value" id="cell-C-p99">—</div>
+            <div class="cell-metric-unit">ms</div>
+          </div>
+          <div class="cell-metric">
+            <div class="cell-metric-label">Peticiones</div>
+            <div class="cell-metric-value" id="cell-C-reqs">—</div>
+            <div class="cell-metric-unit">total</div>
+          </div>
+        </div>
+        <div class="cell-load-bar">
+          <div class="cell-load-label">
+            <span>Carga</span>
+            <span id="cell-C-fail">0 fallidas</span>
+          </div>
+          <div class="cell-load-track">
+            <div class="cell-load-fill" id="cell-C-load" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="cell-actions">
+          <button class="btn btn-warning" onclick="degradeCell('C')">⚡ Degradar</button>
+          <button class="btn btn-danger"  onclick="collapseCell('C')">💥 Colapsar</button>
+          <button class="btn btn-success" onclick="recoverCell('C')">✅ Recuperar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Fila inferior: gráfico + GC ---- -->
+    <div class="bottom-row">
+
+      <!-- Gráfico de latencia p99 en tiempo real -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">📈 Latencia p99 en Tiempo Real</span>
+          <span style="font-size:11px; color: var(--color-text-dim); font-family: monospace;">últimas 30 lecturas</span>
+        </div>
+        <div class="panel-body">
+          <canvas id="latency-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Panel GC + Cache -->
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🧹 Garbage Collector</span>
+          </div>
+          <div class="panel-body">
+            <div class="gc-stats">
+              <div class="gc-stat">
+                <span class="gc-stat-label">Ciclos GC</span>
+                <span class="gc-stat-value" id="gc-cycles">—</span>
+              </div>
+              <div class="gc-stat">
+                <span class="gc-stat-label">Última pausa</span>
+                <span class="gc-stat-value" id="gc-last-pause">— ms</span>
+              </div>
+              <div class="gc-stat">
+                <span class="gc-stat-label">Heap en uso</span>
+                <span class="gc-stat-value" id="gc-heap">— MB</span>
+              </div>
+              <div class="gc-stat">
+                <span class="gc-stat-label">Cache Hit</span>
+                <span class="gc-stat-value" id="gc-cache-hit">— %</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles de load test -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">🔧 Controles</span>
+          </div>
+          <div class="load-controls">
+            <button class="btn-load" onclick="loadTest(1000, '', false)">📦 1k req</button>
+            <button class="btn-load" onclick="loadTest(10000, '', true)">🚀 10k req</button>
+            <button class="btn-load" onclick="loadTest(5000, 'C', true)">🎯 Saturar C</button>
+            <button class="btn-load" onclick="rebalanceToAB()">⚡ Rebalancear A+B</button>
+            <button class="btn-load btn-full" onclick="runFullDemo()">🎬 Demo Completo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Log de eventos ---- -->
+    <div class="panel event-log">
+      <div class="panel-header">
+        <span class="panel-title">📋 Log de Eventos</span>
+        <button class="btn btn-primary" onclick="clearLog()" style="flex: 0; padding: 4px 12px; font-size: 11px;">Limpiar</button>
+      </div>
+      <div class="log-body" id="event-log"></div>
+    </div>
+
+    <!-- 🤖 AI CHAT PANEL -->
+    <aside class="ai-chat-panel collapsed" id="ai-chat-panel">
+        <div class="chat-header">
+            <div class="chat-title">
+                <span class="icon">🤖</span> AIOps Guardian
+            </div>
+            <button id="btn-toggle-chat" class="btn-icon">▲</button>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message system">
+                Bienvenido al Centro de Control Autónomo. Configura tu Proveedor para activar el motor de IA.
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Ej: ¿Cuál es el estado de la célula A?">
+            <button id="btn-send-chat" class="btn btn-primary">Enviar</button>
+        </div>
+    </aside>
+
+    <!-- ⚙️ MODAL CONFIGURACIÓN IA -->
+    <div id="ai-config-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2>Configuración Motor AIOps</h2>
+                <span class="close-btn" id="close-config">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Proveedor de IA</label>
+                    <select id="ai-provider">
+                        <option value="openai">OpenAI (Recomendado)</option>
+                        <option value="groq">Groq (Ultra Rápido)</option>
+                        <option value="ollama">Ollama (Local / Offline)</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="gemini">Google Gemini</option>
+                    </select>
+                </div>
+                <div class="form-group" id="group-api-key">
+                    <label>API Key</label>
+                    <input type="password" id="ai-api-key" placeholder="sk-...">
+                    <small style="color: var(--color-text-dim); display:block; margin-top:4px;">No se persiste en disco, solo en memoria del Gateway.</small>
+                </div>
+                <div class="form-group" id="group-base-url" style="display:none;">
+                    <label>Base URL</label>
+                    <input type="text" id="ai-base-url" value="http://localhost:11434">
+                </div>
+                <div class="form-group">
+                    <label>Modelo</label>
+                    <select id="ai-model">
+                        <option value="gpt-4o">gpt-4o</option>
+                        <option value="gpt-4o-mini">gpt-4o-mini</option>
+                    </select>
+                    <input type="text" id="ai-custom-model" placeholder="Ej: qwen2.5:7b" style="display:none; margin-top:5px; width: 100%;">
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex; justify-content:flex-end; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); margin-top:10px;">
+                <button id="btn-save-config" class="btn btn-success">Guardar y Conectar</button>
+            </div>
+        </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Lógica del dashboard -->
+<script src="app.js" type="module"></script>
+<script src="ai.js" type="module"></script>
+</body>
+</html>

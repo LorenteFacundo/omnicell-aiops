@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "omnicell": {
+      "command": "node",
+      "args": ["RUTA_ABSOLUTA_AL_PROYECTO/mcp-server/dist/index.js"],
+      "env": {
+        "GATEWAY_URL": "http://localhost:8080"
+      }
+    }
+  }
+}

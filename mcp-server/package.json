@@ -1,0 +1,24 @@
+{
+  "name": "omnicell-mcp-server",
+  "version": "1.0.0",
+  "description": "OmniCell AIOps MCP Server — conecta agentes de IA a la infraestructura celular",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "watch": "tsc --watch"
+  },
+  "keywords": ["mcp", "aiops", "cell-based-architecture", "go", "infrastructure"],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "axios": "^1.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.5.0"
+  }
+}
