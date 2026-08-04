@@ -88,7 +88,7 @@ Soporte completo para conectarse como servidor **MCP**, permitiendo que asistent
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/TU_USUARIO/omnicell-aiops.git
+git clone https://github.com/LorenteFacundo/omnicell-aiops.git
 cd omnicell-aiops
 
 # Compilar la aplicación
